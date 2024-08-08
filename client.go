@@ -62,7 +62,7 @@ func (c *Client) readPump() {
 	}
 }
 
-func (c *Client) WritePump() {
+func (c *Client)  WritePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()

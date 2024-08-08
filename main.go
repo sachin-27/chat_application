@@ -1,36 +1,22 @@
 package main
 
 import (
-	"flag"
+	"chat_application/db"
+	"chat_application/router"
+	"chat_application/user"
 	"log"
-	"net/http"
 )
 
-var addr = flag.String("addr", ":8080", "http service address")
-
-func serveHome(w http.ResponseWriter, r *http.Request) {
-	log.Println(r.URL)
-	if r.URL.Path != "/" {
-		http.Error(w, "Not Found", http.StatusNotFound)
-		return
-	}
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	http.ServeFile(w, r, "home.html")
-}
-
 func main() {
-	flag.Parse()
-	hub := NewHub()
-	go hub.run()
-	http.HandleFunc("/", serveHome)
-	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		serveWs(hub, w, r)
-	})
-	err := http.ListenAndServe(*addr, nil)
+	dbConn, err := db.NewDatabase()
 	if err != nil {
-		log.Fatal("ListenAndServe: ", err)
+		log.Fatalf("Could not initialise database connection: %s", err)
 	}
+
+	userRep := user.NewRepository(dbConn.GetDB())
+	userService := user.NewService(userRep)
+	userHandler := user.NewHandler(userService)
+
+	router.InitRouter(userHandler)
+	router.Start("0.0.0.0:8080")
 }
